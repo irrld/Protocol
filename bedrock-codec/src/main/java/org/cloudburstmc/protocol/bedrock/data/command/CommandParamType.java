@@ -94,4 +94,8 @@ public enum CommandParamType {
     CODE_BUILDER_ARGS,
     CODE_BUILDER_SELECT_PARAM,
     CODE_BUILDER_SELECTOR,
+    /**
+     * @since v975
+     */
+    CLOCK_TIME_MARKER_NAME,
 }

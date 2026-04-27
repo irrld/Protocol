@@ -101,6 +101,7 @@ public class CommandParam {
     public static final CommandParam CODE_BUILDER_ARGS = new CommandParam(CommandParamType.CODE_BUILDER_ARGS);
     public static final CommandParam CODE_BUILDER_SELECT_PARAM = new CommandParam(CommandParamType.CODE_BUILDER_SELECT_PARAM);
     public static final CommandParam CODE_BUILDER_SELECTOR = new CommandParam(CommandParamType.CODE_BUILDER_SELECTOR);
+    public static final CommandParam CLOCK_TIME_MARKER_NAME = new CommandParam(CommandParamType.CLOCK_TIME_MARKER_NAME);
 
     private final CommandParamType paramType;
     private final int defaultValue;
