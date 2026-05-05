@@ -14,6 +14,7 @@ import org.cloudburstmc.protocol.bedrock.data.SoundEvent;
 import org.cloudburstmc.protocol.bedrock.data.command.CommandParam;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataFormat;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataTypes;
+import org.cloudburstmc.protocol.bedrock.data.entity.EntityEventType;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityFlag;
 import org.cloudburstmc.protocol.bedrock.packet.*;
 import org.cloudburstmc.protocol.bedrock.transformer.FlagTransformer;
@@ -117,6 +118,10 @@ public class Bedrock_v975 extends Bedrock_v944 {
             .insert(91, CommandParam.CODE_BUILDER_SELECT_PARAM)
             .insert(92, CommandParam.CODE_BUILDER_SELECTOR)
             .insert(134217728, CommandParam.CHAINED_COMMAND)
+            .build();
+
+    protected static final TypeMap<EntityEventType> ENTITY_EVENTS = Bedrock_v944.ENTITY_EVENTS.toBuilder()
+            .insert(81, EntityEventType.HURT_WITHOUT_RECEIVING_DAMAGE)
             .build();
 
     protected static final TypeMap<EntityFlag> ENTITY_FLAGS = Bedrock_v944.ENTITY_FLAGS
