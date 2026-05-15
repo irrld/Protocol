@@ -43,7 +43,7 @@ public class PlayerListPacket implements BedrockPacket {
         private CharSequence name;
         private String xuid;
         private String platformChatId;
-        private BuildPlatform buildPlatform;
+        private BuildPlatform buildPlatform = BuildPlatform.UNKNOWN;
         private SerializedSkin skin;
         private boolean teacher;
         private boolean host;
