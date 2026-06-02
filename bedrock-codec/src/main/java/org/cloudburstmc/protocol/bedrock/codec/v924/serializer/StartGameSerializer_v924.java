@@ -154,6 +154,6 @@ public class StartGameSerializer_v924 extends StartGameSerializer_v898 {
 
     protected ServerConfigurationJoinInfo readServerJoinInfo(ByteBuf buffer, BedrockCodecHelper helper) {
         buffer.readBoolean();
-        return new ServerConfigurationJoinInfo(null, null, false);
+        return new ServerConfigurationJoinInfo(null, null, null);
     }
 }

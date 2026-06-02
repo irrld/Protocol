@@ -3,8 +3,7 @@ package org.cloudburstmc.protocol.bedrock.packet;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import lombok.Value;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.cloudburstmc.protocol.bedrock.data.PresenceConfiguration;
 import org.cloudburstmc.protocol.common.PacketSignal;
 
 /**
@@ -18,18 +17,6 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 public class ServerPresenceInfoPacket implements BedrockPacket {
 
     private PresenceConfiguration presenceConfiguration;
-
-    @Value
-    public static class PresenceConfiguration {
-        @Nullable // since v1001
-        String experienceName;
-        @Nullable // since v1001
-        String worldName;
-        /**
-         * @since v1001
-         */
-        String richPresenceId;
-    }
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {
