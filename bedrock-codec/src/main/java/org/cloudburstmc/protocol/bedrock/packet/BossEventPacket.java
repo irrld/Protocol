@@ -15,9 +15,12 @@ public class BossEventPacket implements BedrockPacket {
     private CharSequence title;
     private CharSequence filteredTitle = "";
     private float healthPercentage;
+    /**
+     * @deprecated since v1001
+     */
     private int darkenSky;
-    private int color;
-    private int overlay;
+    private int color; // PINK|BLUE|RED|GREEN|YELLOW|PURPLE|REBECCA_PURPLE|WHITE
+    private int overlay; // PROGRESS|NOTCHED_6|NOTCHED_10|NOTCHED_12|NOTCHED_20
 
     @Override
     public final PacketSignal handle(BedrockPacketHandler handler) {

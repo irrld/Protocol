@@ -23,7 +23,7 @@ public class StartGameSerializer_v944 extends StartGameSerializer_v924 {
         h.writeString(buf, store.getStoreName());
     }
 
-    private void writeGatheringsConfiguration(ByteBuf buf, BedrockCodecHelper h, GatheringsConfigurationJoinInfo info) {
+    protected void writeGatheringsConfiguration(ByteBuf buf, BedrockCodecHelper h, GatheringsConfigurationJoinInfo info) {
         h.writeUuid(buf, info.getExperienceId());
         h.writeString(buf, info.getExperienceName());
         h.writeUuid(buf, info.getWorldId());
@@ -50,7 +50,7 @@ public class StartGameSerializer_v944 extends StartGameSerializer_v924 {
         );
     }
 
-    private GatheringsConfigurationJoinInfo readGatheringsConfiguration(ByteBuf buf, BedrockCodecHelper h) {
+    protected GatheringsConfigurationJoinInfo readGatheringsConfiguration(ByteBuf buf, BedrockCodecHelper h) {
         return new GatheringsConfigurationJoinInfo(
                 h.readUuid(buf),
                 h.readString(buf),

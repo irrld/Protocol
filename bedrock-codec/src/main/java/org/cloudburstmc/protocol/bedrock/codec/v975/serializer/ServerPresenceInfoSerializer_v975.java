@@ -23,6 +23,6 @@ public class ServerPresenceInfoSerializer_v975 implements BedrockPacketSerialize
     @Override
     public void deserialize(ByteBuf buffer, BedrockCodecHelper helper, ServerPresenceInfoPacket packet) {
         packet.setPresenceConfiguration(helper.readOptional(buffer, null, (buf, h) ->
-                new ServerPresenceInfoPacket.PresenceConfiguration(h.readString(buf), h.readString(buf))));
+                new ServerPresenceInfoPacket.PresenceConfiguration(h.readString(buf), h.readString(buf), null)));
     }
 }

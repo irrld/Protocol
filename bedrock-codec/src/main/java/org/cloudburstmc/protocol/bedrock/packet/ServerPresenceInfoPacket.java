@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.Value;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.protocol.common.PacketSignal;
 
 /**
@@ -20,8 +21,14 @@ public class ServerPresenceInfoPacket implements BedrockPacket {
 
     @Value
     public static class PresenceConfiguration {
+        @Nullable // since v1001
         String experienceName;
+        @Nullable // since v1001
         String worldName;
+        /**
+         * @since v1001
+         */
+        String richPresenceId;
     }
 
     @Override
