@@ -12,7 +12,7 @@ public class BossEventPacket implements BedrockPacket {
     private long bossUniqueEntityId;
     private Action action;
     private long playerUniqueEntityId;
-    private CharSequence title;
+    private CharSequence title = "";
     private CharSequence filteredTitle = "";
     private float healthPercentage;
     /**
