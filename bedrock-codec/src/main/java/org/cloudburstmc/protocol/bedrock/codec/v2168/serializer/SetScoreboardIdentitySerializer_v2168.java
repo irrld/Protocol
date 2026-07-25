@@ -23,7 +23,7 @@ public class SetScoreboardIdentitySerializer_v2168 extends SetScoreboardIdentity
             VarInts.writeLong(buffer, entry.getScoreboardId());
             if (action == Action.ADD) {
                 buffer.writeBoolean(true);
-                helper.writeUuid(buffer, entry.getUuid());
+                VarInts.writeLong(buffer, entry.getPlayerId());
             } else {
                 buffer.writeBoolean(false);
             }
@@ -36,11 +36,11 @@ public class SetScoreboardIdentitySerializer_v2168 extends SetScoreboardIdentity
         packet.setAction(action);
         helper.readArray(buffer, packet.getEntries(), buf -> {
             long scoreboardId = VarInts.readLong(buffer);
-            UUID uuid = null;
+            long playerId = 0;
             if (buffer.readBoolean()) {
-                uuid = helper.readUuid(buffer);
+                playerId = VarInts.readLong(buffer);
             }
-            return new Entry(scoreboardId, uuid);
+            return new Entry(scoreboardId, playerId);
         });
     }
 }

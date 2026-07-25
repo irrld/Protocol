@@ -27,6 +27,7 @@ import org.cloudburstmc.protocol.bedrock.data.inventory.itemstack.request.ItemSt
 import org.cloudburstmc.protocol.bedrock.data.inventory.itemstack.request.TextProcessingEventOrigin;
 import org.cloudburstmc.protocol.bedrock.data.inventory.itemstack.request.action.*;
 import org.cloudburstmc.protocol.bedrock.data.inventory.itemstack.response.ItemStackResponseSlot;
+import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.InventorySource;
 import org.cloudburstmc.protocol.bedrock.data.skin.*;
 import org.cloudburstmc.protocol.bedrock.data.structure.StructureAnimationMode;
 import org.cloudburstmc.protocol.bedrock.data.structure.StructureMirror;
@@ -465,11 +466,7 @@ public class BedrockCodecHelper_v2168 extends BedrockCodecHelper_v975 {
 
     @Override
     protected void writeRequestActionData(ByteBuf byteBuf, ItemStackRequestAction action) {
-        int maybeLe = this.stackRequestActionTypes.getId(action.getType());
-        if (maybeLe >= 7) {
-            maybeLe += 1;
-        }
-        byteBuf.writeByte(maybeLe);
+        byteBuf.writeByte(action.getType().ordinal());
 
         switch (action.getType()) {
             case TAKE:
@@ -518,7 +515,7 @@ public class BedrockCodecHelper_v2168 extends BedrockCodecHelper_v975 {
                 byteBuf.writeByte(((AutoCraftRecipeAction) action).getNumberOfRequestedCrafts()); // count duplication removed
                 List<ItemDescriptorWithCount> ingredients = ((AutoCraftRecipeAction) action).getIngredients();
                 byteBuf.writeByte(ingredients.size());
-                writeArray(byteBuf, ingredients, this::writeIngredient);
+                writeArray(byteBuf, ingredients, this::writeIngredient2);
                 break;
             case CRAFT_CREATIVE:
                 VarInts.writeUnsignedInt(byteBuf, ((CraftCreativeAction) action).getCreativeItemNetworkId());
@@ -609,7 +606,7 @@ public class BedrockCodecHelper_v2168 extends BedrockCodecHelper_v975 {
                 int recipeNetworkId = VarInts.readUnsignedInt(byteBuf);
                 int numberOfRequestedCrafts = byteBuf.readUnsignedByte(); // count duplication removed
                 List<ItemDescriptorWithCount> ingredients = new ObjectArrayList<>();
-                this.readArray(byteBuf, ingredients, this::readIngredient);
+                this.readArray(byteBuf, ingredients, this::readIngredient2);
                 return new AutoCraftRecipeAction(recipeNetworkId, numberOfRequestedCrafts, ingredients, numberOfRequestedCrafts);
             case CRAFT_CREATIVE:
                 return new CraftCreativeAction(
@@ -838,11 +835,74 @@ public class BedrockCodecHelper_v2168 extends BedrockCodecHelper_v975 {
         return new ItemDescriptorWithCount(descriptor, count);
     }
 
+    protected ItemDescriptorWithCount readIngredient2(ByteBuf buffer) {
+        ItemDescriptorType type = DESCRIPTOR_TYPES[VarInts.readUnsignedInt(buffer)];
+
+        int type2 = buffer.readUnsignedByte();
+        //type = DESCRIPTOR_TYPES[type2];
+
+        ItemDescriptor descriptor;
+        switch (type) {
+            case INVALID:
+                descriptor = InvalidDescriptor.INSTANCE;
+                break;
+            case DEFAULT:
+                String id = this.readString(buffer);
+                int aux = VarInts.readInt(buffer);
+                ItemDefinition definition = this.itemDefinitions.getDefinition(id);
+                if (definition == null && log.isDebugEnabled()) {
+                    log.debug("No ItemDefinition for id {}, did proxy not set itemDefinitions?", id);
+                }
+                descriptor = new DefaultDescriptor(definition, aux);
+                break;
+            case MOLANG:
+                descriptor = new MolangDescriptor(this.readString(buffer), buffer.readShortLE());
+                break;
+            case ITEM_TAG:
+                descriptor = new ItemTagDescriptor(this.readString(buffer));
+                break;
+            default:
+                throw new UnsupportedOperationException("ItemDescriptorType");
+        }
+
+        int count = buffer.readUnsignedShortLE();
+        return new ItemDescriptorWithCount(descriptor, count);
+    }
+
     @Override
     public void writeIngredient(ByteBuf buffer, ItemDescriptorWithCount ingredient) {
         VarInts.writeUnsignedInt(buffer, Math.min(ingredient.getDescriptor().getType().ordinal(), 1));
         this.writeItemDescriptor(buffer, ingredient.getDescriptor());
         VarInts.writeInt(buffer, ingredient.getCount());
+    }
+
+    protected void writeIngredient2(ByteBuf buffer, ItemDescriptorWithCount ingredient) {
+        VarInts.writeUnsignedInt(buffer, ingredient.getDescriptor().getType().ordinal());
+
+        buffer.writeByte(ingredient.getDescriptor().getType().ordinal());
+
+        switch (ingredient.getDescriptor().getType()) {
+            case INVALID:
+                break;
+            case DEFAULT:
+                DefaultDescriptor defaultDescriptor = (DefaultDescriptor) ingredient.getDescriptor();
+                this.writeString(buffer, defaultDescriptor.getItemId().getIdentifier());
+                VarInts.writeInt(buffer, defaultDescriptor.getAuxValue());
+                break;
+            case MOLANG:
+                MolangDescriptor molangDescriptor = (MolangDescriptor) ingredient.getDescriptor();
+                this.writeString(buffer, molangDescriptor.getTagExpression());
+                buffer.writeShortLE(molangDescriptor.getMolangVersion());
+                break;
+            case ITEM_TAG:
+                ItemTagDescriptor tagDescriptor = (ItemTagDescriptor) ingredient.getDescriptor();
+                this.writeString(buffer, tagDescriptor.getItemTag());
+                break;
+            default:
+                throw new UnsupportedOperationException("ItemDescriptorType");
+        }
+
+        buffer.writeShortLE(ingredient.getCount());
     }
 
     @Override
@@ -899,13 +959,15 @@ public class BedrockCodecHelper_v2168 extends BedrockCodecHelper_v975 {
             case MOLANG:
                 MolangDescriptor molangDescriptor = (MolangDescriptor) descriptor;
                 this.writeString(buffer, molangDescriptor.getTagExpression());
-                buffer.writeByte(molangDescriptor.getMolangVersion());
+                buffer.writeShortLE(molangDescriptor.getMolangVersion());
                 break;
             case ITEM_TAG:
                 ItemTagDescriptor tagDescriptor = (ItemTagDescriptor) descriptor;
                 this.writeString(buffer, tagDescriptor.getItemTag());
                 VarInts.writeInt(buffer, 32767);
                 break;
+            default:
+                throw new UnsupportedOperationException();
         }
     }
 
@@ -1130,5 +1192,62 @@ public class BedrockCodecHelper_v2168 extends BedrockCodecHelper_v975 {
                 h.readOptional(buf, null, h::readString),
                 h.readOptional(buf, null, h::readString)
         );
+    }
+
+    @Override
+    public InventorySource readSource(ByteBuf buffer) {
+        InventorySource.Type type = InventorySource.Type.byId(VarInts.readUnsignedInt(buffer));
+
+        int containerId = 0;
+        InventorySource.Flag flag = null;
+        if (buffer.readBoolean() && buffer.readBoolean()) containerId = buffer.readByte();
+        if (buffer.readBoolean() && buffer.readBoolean()) flag = InventorySource.Flag.values()[VarInts.readUnsignedInt(buffer)];
+        switch (type) {
+            case CONTAINER:
+                return InventorySource.fromContainerWindowId(containerId);
+            case GLOBAL:
+                return InventorySource.fromGlobalInventory();
+            case WORLD_INTERACTION:
+                if (flag == null) throw new IllegalStateException();
+                return InventorySource.fromWorldInteraction(flag);
+            case CREATIVE:
+                return InventorySource.fromCreativeInventory();
+            case NON_IMPLEMENTED_TODO:
+                return InventorySource.fromNonImplementedTodo(containerId);
+            case UNTRACKED_INTERACTION_UI:
+                return InventorySource.fromUntrackedInteractionUI(containerId);
+            default:
+                return InventorySource.fromInvalid();
+        }
+    }
+
+    @Override
+    public void writeSource(ByteBuf buffer, InventorySource inventorySource) {
+        requireNonNull(inventorySource, "InventorySource was null");
+
+        VarInts.writeUnsignedInt(buffer, inventorySource.getType().id());
+
+        buffer.writeBoolean(true);
+        switch (inventorySource.getType()) {
+            case CONTAINER:
+            case NON_IMPLEMENTED_TODO:
+                buffer.writeBoolean(true);
+                buffer.writeByte(inventorySource.getContainerId());
+                break;
+            default:
+                buffer.writeBoolean(false);
+                break;
+        }
+
+        buffer.writeBoolean(true);
+        switch (inventorySource.getType()) {
+            case WORLD_INTERACTION:
+                buffer.writeBoolean(true);
+                VarInts.writeUnsignedInt(buffer, inventorySource.getFlag().ordinal());
+                break;
+            default:
+                buffer.writeBoolean(false);
+                break;
+        }
     }
 }
