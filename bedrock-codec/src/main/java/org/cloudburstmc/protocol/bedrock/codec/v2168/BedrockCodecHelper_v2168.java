@@ -201,7 +201,7 @@ public class BedrockCodecHelper_v2168 extends BedrockCodecHelper_v975 {
         int count = buffer.readUnsignedShortLE();
         int aux = VarInts.readUnsignedInt(buffer);
 
-        int blockRuntimeId = VarInts.readInt(buffer); // signed??
+        int blockRuntimeId = VarInts.readInt(buffer);
 
         NbtMap compoundTag = null;
         long blockingTicks = 0;
@@ -363,7 +363,7 @@ public class BedrockCodecHelper_v2168 extends BedrockCodecHelper_v975 {
         buffer.writeShortLE(item.getCount());
         VarInts.writeUnsignedInt(buffer, item.getDamage());
 
-        VarInts.writeInt(buffer, air || item.getBlockDefinition() == null ? 0 : item.getBlockDefinition().getRuntimeId()); //signed??
+        VarInts.writeInt(buffer, air || item.getBlockDefinition() == null ? 0 : item.getBlockDefinition().getRuntimeId());
 
         if (air) {
             VarInts.writeUnsignedInt(buffer, 0);
@@ -699,7 +699,6 @@ public class BedrockCodecHelper_v2168 extends BedrockCodecHelper_v975 {
 
         List<PersonaPieceTintData> tintColors = new ObjectArrayList<>();
         this.readArray(buffer, tintColors, (buf, h) -> {
-            //int pieceType = (int) buf.readUnsignedIntLE();
             PersonaPieceType pieceType = PersonaPieceType.fromName(this.readString(buf));
             List<Color> colors = new ArrayList<>(4);
             for (int i = 0; i < 4; i++) {
@@ -760,7 +759,6 @@ public class BedrockCodecHelper_v2168 extends BedrockCodecHelper_v975 {
         List<PersonaPieceTintData> tints = skin.getTintColors();
         VarInts.writeUnsignedInt(buffer, tints.size());
         for (PersonaPieceTintData tint : tints) {
-            //buffer.writeIntLE(tint.getPieceType().ordinal());
             this.writeString(buffer, tint.getType());
             List<Color> colors = tint.getColorsNew();
             if (colors.size() != 4) {
@@ -836,7 +834,7 @@ public class BedrockCodecHelper_v2168 extends BedrockCodecHelper_v975 {
     public ItemDescriptorWithCount readIngredient(ByteBuf buffer) {
         ItemDescriptorType type = DESCRIPTOR_TYPES[VarInts.readUnsignedInt(buffer)];
         ItemDescriptor descriptor = this.readItemDescriptor(buffer, type);
-        int count = VarInts.readInt(buffer); //buffer.readShortLE(); //who said uint16???
+        int count = VarInts.readInt(buffer);
         return new ItemDescriptorWithCount(descriptor, count);
     }
 
@@ -844,7 +842,6 @@ public class BedrockCodecHelper_v2168 extends BedrockCodecHelper_v975 {
     public void writeIngredient(ByteBuf buffer, ItemDescriptorWithCount ingredient) {
         VarInts.writeUnsignedInt(buffer, Math.min(ingredient.getDescriptor().getType().ordinal(), 1));
         this.writeItemDescriptor(buffer, ingredient.getDescriptor());
-        //buffer.writeShortLE(ingredient.getCount());
         VarInts.writeInt(buffer, ingredient.getCount());
     }
 
@@ -939,7 +936,7 @@ public class BedrockCodecHelper_v2168 extends BedrockCodecHelper_v975 {
         int slot = buffer.readUnsignedByte();
         int hotbarSlot = buffer.readUnsignedByte();
         int count = buffer.readUnsignedByte();
-        Integer stackNetworkId = buffer.readBoolean() && buffer.readBoolean() ? VarInts.readInt(buffer) : 0; //could be 0? null
+        int stackNetworkId = buffer.readBoolean() && buffer.readBoolean() ? VarInts.readInt(buffer) : 0;
         String customName = this.readString(buffer);
         String filteredCustomName = this.readString(buffer);
         int durabilityCorrection = VarInts.readInt(buffer);
@@ -953,8 +950,8 @@ public class BedrockCodecHelper_v2168 extends BedrockCodecHelper_v975 {
         buffer.writeByte(itemEntry.getSlot());
         buffer.writeByte(itemEntry.getHotbarSlot());
         buffer.writeByte(itemEntry.getCount());
-        buffer.writeBoolean(true);//in or out?
-        if (itemEntry.getStackNetworkId() > 0) { //could be >0? itemEntry.getStackNetworkId() != null
+        buffer.writeBoolean(true);
+        if (itemEntry.getStackNetworkId() > 0) {
             buffer.writeBoolean(true);
             VarInts.writeInt(buffer, itemEntry.getStackNetworkId());
         } else {
@@ -985,7 +982,7 @@ public class BedrockCodecHelper_v2168 extends BedrockCodecHelper_v975 {
         ItemDefinition definition = descriptor == InvalidDescriptor.INSTANCE ? ItemData.AIR.getDefinition() : ((DefaultDescriptor) descriptor).getItemId();
         int aux = descriptor == InvalidDescriptor.INSTANCE ? 0 : ((DefaultDescriptor) descriptor).getAuxValue();
 
-        int count = buffer.readShortLE(); //VarInts.readUnsignedInt(buffer); //
+        int count = buffer.readShortLE();
 
         int blockRuntimeId = VarInts.readUnsignedInt(buffer);
 
