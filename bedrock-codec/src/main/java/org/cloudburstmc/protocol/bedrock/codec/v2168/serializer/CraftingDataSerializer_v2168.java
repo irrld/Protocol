@@ -67,10 +67,8 @@ public class CraftingDataSerializer_v2168 extends CraftingDataSerializer_v748 {
     @Override
     protected void writeRequirement(ByteBuf buffer, BedrockCodecHelper helper, CraftingRecipeData data) {
         VarInts.writeInt(buffer, data.getRequirement().getContext().ordinal());
-        if (data.getRequirement().getContext().equals(RecipeUnlockingRequirement.UnlockingContext.NONE)) {
-            buffer.writeBoolean(true);
-            helper.writeArray(buffer, data.getRequirement().getIngredients(), (buf, h, ingredient) -> h.writeIngredient(buf, ingredient));
-        } else buffer.writeBoolean(false);
+        helper.writeOptional(buffer, requirement-> requirement.getContext().equals(RecipeUnlockingRequirement.UnlockingContext.NONE), data.getRequirement(), (bb, hh, rr) ->
+                hh.writeArray(bb, rr.getIngredients(), (buf, h, ingredient) -> h.writeIngredient(buf, ingredient)));
     }
 
     @Override

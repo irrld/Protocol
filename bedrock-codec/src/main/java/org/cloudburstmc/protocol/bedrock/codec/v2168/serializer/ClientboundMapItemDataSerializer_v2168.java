@@ -25,104 +25,59 @@ public class ClientboundMapItemDataSerializer_v2168 extends ClientboundMapItemDa
         buffer.writeBoolean(packet.isLocked());
         helper.writeVector3i(buffer, packet.getOrigin());
 
-        int[] colors = packet.getColors();
-        List<MapDecoration> decorations = packet.getDecorations();
-        List<MapTrackedObject> trackedObjects = packet.getTrackedObjects();
-        LongList trackedEntityIds = packet.getTrackedEntityIds();
-
-        if (trackedEntityIds != null) {
-            buffer.writeBoolean(true);
-            VarInts.writeUnsignedInt(buffer, packet.getTrackedEntityIds().size());
-            for (long trackedEntityId : packet.getTrackedEntityIds()) {
-                VarInts.writeLong(buffer, trackedEntityId);
+        helper.writeOptionalNull(buffer, packet.getTrackedEntityIds(), (buf, trackedEntityIds) -> {
+            VarInts.writeUnsignedInt(buf, trackedEntityIds.size());
+            for (long trackedEntityId : trackedEntityIds) {
+                VarInts.writeLong(buf, trackedEntityId);
             }
-        } else {
-            buffer.writeBoolean(false);
-        }
+        });
 
-        if (packet.getScale() != null) {
-            buffer.writeBoolean(true);
-            buffer.writeByte(packet.getScale());
-        } else {
-            buffer.writeBoolean(false);
-        }
+        helper.writeOptionalNull(buffer, packet.getScale(), (buf,b)-> buf.writeByte(b));
 
-        if (trackedObjects != null) {
-            buffer.writeBoolean(true);
-            VarInts.writeUnsignedInt(buffer, trackedObjects.size());
+        helper.writeOptionalNull(buffer, packet.getTrackedObjects(), (buf, trackedObjects) -> {
+            VarInts.writeUnsignedInt(buf, trackedObjects.size());
             for (MapTrackedObject object : trackedObjects) {
-                buffer.writeIntLE(object.getType().ordinal());
+                buf.writeIntLE(object.getType().ordinal());
                 switch (object.getType()) {
                     case ENTITY:
-                        buffer.writeBoolean(true);
-                        VarInts.writeLong(buffer, object.getEntityId());
-                        buffer.writeBoolean(false);
+                        buf.writeBoolean(true);
+                        VarInts.writeLong(buf, object.getEntityId());
+                        buf.writeBoolean(false);
                         break;
                     case BLOCK:
-                        buffer.writeBoolean(false);
-                        buffer.writeBoolean(true);
-                        helper.writeBlockPosition(buffer, object.getPosition());
+                        buf.writeBoolean(false);
+                        buf.writeBoolean(true);
+                        helper.writeBlockPosition(buf, object.getPosition());
                         break;
                     default:
                         throw new IllegalArgumentException();
                 }
             }
-        } else {
-            buffer.writeBoolean(false);
-        }
+        });
 
-        if (decorations != null) {
-            buffer.writeBoolean(true);
-            VarInts.writeUnsignedInt(buffer, decorations.size());
+        helper.writeOptionalNull(buffer, packet.getDecorations(), (buf, decorations) -> {
+            VarInts.writeUnsignedInt(buf, decorations.size());
             for (MapDecoration decoration : decorations) {
-                buffer.writeByte(decoration.getImage());
-                buffer.writeByte(decoration.getRotation());
-                buffer.writeByte(decoration.getXOffset());
-                buffer.writeByte(decoration.getYOffset());
-                helper.writeString(buffer, decoration.getLabel());
-                buffer.writeIntLE(decoration.getColor());
+                buf.writeByte(decoration.getImage());
+                buf.writeByte(decoration.getRotation());
+                buf.writeByte(decoration.getXOffset());
+                buf.writeByte(decoration.getYOffset());
+                helper.writeString(buf, decoration.getLabel());
+                buf.writeIntLE(decoration.getColor());
             }
-        } else {
-            buffer.writeBoolean(false);
-        }
+        });
 
-        if (packet.getWidth() != null) {
-            buffer.writeBoolean(true);
-            VarInts.writeInt(buffer, packet.getWidth());
-        } else {
-            buffer.writeBoolean(false);
-        }
+        helper.writeOptionalNull(buffer, packet.getWidth(), VarInts::writeInt);
+        helper.writeOptionalNull(buffer, packet.getHeight(), VarInts::writeInt);
+        helper.writeOptionalNull(buffer, packet.getXOffset(), VarInts::writeInt);
+        helper.writeOptionalNull(buffer, packet.getYOffset(), VarInts::writeInt);
 
-        if (packet.getHeight() != null) {
-            buffer.writeBoolean(true);
-            VarInts.writeInt(buffer, packet.getHeight());
-        } else {
-            buffer.writeBoolean(false);
-        }
-
-        if (packet.getXOffset() != null) {
-            buffer.writeBoolean(true);
-            VarInts.writeInt(buffer, packet.getXOffset());
-        } else {
-            buffer.writeBoolean(false);
-        }
-
-        if (packet.getYOffset() != null) {
-            buffer.writeBoolean(true);
-            VarInts.writeInt(buffer, packet.getYOffset());
-        } else {
-            buffer.writeBoolean(false);
-        }
-
-        if (colors != null) {
-            buffer.writeBoolean(true);
-            VarInts.writeUnsignedInt(buffer, colors.length);
+        helper.writeOptionalNull(buffer, packet.getColors(), (buf, colors) -> {
+            VarInts.writeUnsignedInt(buf, colors.length);
             for (int color : colors) {
-                buffer.writeIntLE(color);
+                buf.writeIntLE(color);
             }
-        } else {
-            buffer.writeBoolean(false);
-        }
+        });
     }
 
     @Override
@@ -141,9 +96,7 @@ public class ClientboundMapItemDataSerializer_v2168 extends ClientboundMapItemDa
             packet.setTrackedEntityIds(trackedEntityIds);
         }
 
-        if (buffer.readBoolean()) {
-            packet.setScale(buffer.readByte());
-        }
+        packet.setScale(helper.readOptional(buffer, null, ByteBuf::readByte));
 
         if (buffer.readBoolean()) {
             List<MapTrackedObject> trackedObjects = new ArrayList<>();
@@ -175,21 +128,10 @@ public class ClientboundMapItemDataSerializer_v2168 extends ClientboundMapItemDa
             packet.setDecorations(decorations);
         }
 
-        if (buffer.readBoolean()) {
-            packet.setWidth(VarInts.readInt(buffer));
-        }
-
-        if (buffer.readBoolean()) {
-            packet.setHeight(VarInts.readInt(buffer));
-        }
-
-        if (buffer.readBoolean()) {
-            packet.setXOffset(VarInts.readInt(buffer));
-        }
-
-        if (buffer.readBoolean()) {
-            packet.setYOffset(VarInts.readInt(buffer));
-        }
+        packet.setWidth(helper.readOptional(buffer, null, VarInts::readInt));
+        packet.setHeight(helper.readOptional(buffer, null, VarInts::readInt));
+        packet.setXOffset(helper.readOptional(buffer, null, VarInts::readInt));
+        packet.setYOffset(helper.readOptional(buffer, null, VarInts::readInt));
 
         if (buffer.readBoolean()) {
             int length = VarInts.readUnsignedInt(buffer);

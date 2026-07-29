@@ -19,13 +19,10 @@ public class MovePlayerSerializer_v2168 extends MovePlayerSerializer_v419 {
         buffer.writeBoolean(packet.isOnGround());
         VarInts.writeUnsignedLong(buffer, packet.getRidingRuntimeEntityId());
 
-        if (packet.getMode() == MovePlayerPacket.Mode.TELEPORT) {
-            buffer.writeBoolean(true);
-            buffer.writeIntLE(packet.getTeleportationCause().ordinal());
-            buffer.writeIntLE(packet.getEntityType());
-        } else {
-            buffer.writeBoolean(false);
-        }
+        helper.writeOptional(buffer, pk -> pk.getMode() == MovePlayerPacket.Mode.TELEPORT, packet, (buf, pk) -> {
+            buf.writeIntLE(pk.getTeleportationCause().ordinal());
+            buf.writeIntLE(pk.getEntityType());
+        });
 
         VarInts.writeUnsignedLong(buffer, packet.getTick());
     }

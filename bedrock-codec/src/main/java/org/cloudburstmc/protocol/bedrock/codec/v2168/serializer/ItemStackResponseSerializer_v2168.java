@@ -23,7 +23,7 @@ public class ItemStackResponseSerializer_v2168 extends ItemStackResponseSerializ
             buf.writeByte(response.getResult().ordinal());
             VarInts.writeInt(buffer, response.getRequestId());
 
-            buf.writeBoolean(true); //in or out?
+            buf.writeBoolean(true);
             if (response.getContainers().isEmpty()) {
                 buf.writeBoolean(false);
                 return;
