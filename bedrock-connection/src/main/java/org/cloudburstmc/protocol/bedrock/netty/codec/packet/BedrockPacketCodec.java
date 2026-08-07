@@ -15,12 +15,20 @@ import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.UnknownPacket;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 
 import static java.util.Objects.requireNonNull;
 
 public abstract class BedrockPacketCodec extends MessageToMessageCodec<ByteBuf, BedrockPacketWrapper> {
     private static final InternalLogger log = InternalLoggerFactory.getInstance(BedrockPacketCodec.class);
     public static final String NAME = "bedrock-packet-codec";
+
+    // Last encoded size per packet id, used to size the encode buffer.
+    private static final Map<Integer, AtomicIntegerArray> SIZE_HINTS = new ConcurrentHashMap<>();
+    private static final int MAX_PACKET_ID = 1024;
+    private static final int MIN_BUFFER_SIZE = 128;
 
     private BedrockCodec codec = BedrockCompat.CODEC;
     private BedrockCodecHelper helper = codec.createHelper();
@@ -41,12 +49,15 @@ public abstract class BedrockPacketCodec extends MessageToMessageCodec<ByteBuf, 
             // We have a pre-encoded packet buffer, just use that.
             out.add(msg.retain());
         } else {
-            ByteBuf buf = ctx.alloc().buffer(128);
+            BedrockPacket packet = msg.getPacket();
+            int protocolVersion = this.codec.getProtocolVersion();
+            int packetId = getPacketId(packet);
+            ByteBuf buf = ctx.alloc().buffer(getSizeHint(protocolVersion, packetId));
             try {
-                BedrockPacket packet = msg.getPacket();
-                msg.setPacketId(getPacketId(packet));
+                msg.setPacketId(packetId);
                 encodeHeader(buf, msg);
                 this.codec.tryEncode(helper, buf, packet);
+                setSizeHint(protocolVersion, packetId, buf.readableBytes());
 
                 msg.setPacketBuffer(buf.retain());
                 out.add(msg.retain());
@@ -79,6 +90,24 @@ public abstract class BedrockPacketCodec extends MessageToMessageCodec<ByteBuf, 
         } finally {
             wrapper.release();
         }
+    }
+
+    /** How large to allocate an encode buffer for this packet. Also for callers that encode outside a pipeline. */
+    public static int getSizeHint(int protocolVersion, int packetId) {
+        if (packetId < 0 || packetId >= MAX_PACKET_ID) {
+            return MIN_BUFFER_SIZE;
+        }
+        AtomicIntegerArray hints = SIZE_HINTS.get(protocolVersion);
+        return hints == null ? MIN_BUFFER_SIZE : Math.max(MIN_BUFFER_SIZE, hints.get(packetId));
+    }
+
+    /** Feeds an encoded size back into {@link #getSizeHint(int, int)}. */
+    public static void setSizeHint(int protocolVersion, int packetId, int size) {
+        if (packetId < 0 || packetId >= MAX_PACKET_ID) {
+            return;
+        }
+        SIZE_HINTS.computeIfAbsent(protocolVersion, version -> new AtomicIntegerArray(MAX_PACKET_ID))
+                .set(packetId, size);
     }
 
     public abstract void encodeHeader(ByteBuf buf, BedrockPacketWrapper msg);
