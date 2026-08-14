@@ -2,20 +2,13 @@ package org.cloudburstmc.protocol.bedrock.codec.v2168.serializer;
 
 import io.netty.buffer.ByteBuf;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodecHelper;
-import org.cloudburstmc.protocol.bedrock.codec.v291.serializer.SetScoreSerializer_v291;
 import org.cloudburstmc.protocol.bedrock.data.ScoreInfo;
 import org.cloudburstmc.protocol.bedrock.packet.SetScorePacket;
 import org.cloudburstmc.protocol.common.util.VarInts;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class SetScoreSerializer_v2168 extends SetScoreSerializer_v291 {
+public class SetScoreSerializer_v2168_hotfix4 extends SetScoreSerializer_v2168 {
 
-    public static final SetScoreSerializer_v2168 INSTANCE = new SetScoreSerializer_v2168();
-
-    protected static final String[] TYPES = {"remove", "changeplayer", "changeentity", "changefakeplayer"};
-
-    protected static final Logger log = LoggerFactory.getLogger(SetScoreSerializer_v2168.class);
+    public static final SetScoreSerializer_v2168_hotfix4 INSTANCE = new SetScoreSerializer_v2168_hotfix4();
 
     @Override
     public void serialize(ByteBuf buffer, BedrockCodecHelper helper, SetScorePacket packet) {
@@ -27,7 +20,10 @@ public class SetScoreSerializer_v2168 extends SetScoreSerializer_v291 {
 
             switch (scoreInfo.getType()) {
                 case INVALID:
-                    helper.writeOptional(buf, o-> !o.isEmpty(), scoreInfo.getObjectiveId(), helper::writeString);
+                    helper.writeOptional(buf, o-> !o.isEmpty(), scoreInfo.getObjectiveId(), (buffer1, string) -> {
+                        buffer.writeBoolean(true); // this
+                        helper.writeString(buffer1, string);
+                    });
                     break;
                 case ENTITY:
                 case PLAYER:
@@ -65,11 +61,13 @@ public class SetScoreSerializer_v2168 extends SetScoreSerializer_v291 {
 
             long scoreboardId = VarInts.readLong(buf);
 
-            String objectiveId;
+            String objectiveId = null;
             int score;
             switch (type) {
                 case INVALID:
-                    objectiveId = helper.readOptional(buf, null, helper::readString);
+                    if (buffer.readBoolean()) { // this
+                        objectiveId = helper.readOptional(buf, null, helper::readString);
+                    }
                     return new ScoreInfo(scoreboardId, objectiveId == null ? "" : objectiveId, 0);
                 case ENTITY:
                 case PLAYER:
